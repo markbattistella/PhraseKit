@@ -111,6 +111,37 @@ let silentPhrase = generator.uniquePhrase
 print("Silent phrase: \(silentPhrase.isEmpty ? "No phrase available" : silentPhrase)")
 ```
 
+### Exclusion List
+
+`PhraseKit` allows you to specify an exclusion list of words that should be excluded from any generated phrases. This is particularly useful if you want to prevent certain words from appearing in the output, such as inappropriate words, reserved words, or any other undesired terms.
+
+#### Using the Exclusion List
+
+You can provide an exclusion list when initialising the `PhraseGenerator`. This list will filter out the specified words from the available word pools (nouns, verbs, adjectives, adverbs, or custom words) before any phrases are generated.
+
+```swift
+import PhraseKit
+
+// Example exclusion list
+let exclusionWords = ["apple", "orange", "badWord"]
+
+// Initialize the PhraseGenerator with the exclusion list
+let generator = PhraseGenerator(exclusionList: exclusionWords)
+
+// Generate a random two-word phrase, ensuring excluded words are not used
+if let phrase = generator.generatePhrase() {
+    print("Generated phrase: \(phrase)")
+}
+```
+
+#### How the Exclusion List Works
+
+- The exclusion list applies to all word lists used in the phrase generation process, including nouns, verbs, adjectives, adverbs, and any custom word lists.
+- Before any phrase is generated, the exclusion list is applied, ensuring that no excluded words are present in the word pool.
+- The `getWordCombinationCount` function will also respect the exclusion list, providing an accurate count of possible combinations after exclusions.
+
+This feature ensures that your generated phrases meet specific requirements and avoid any unwanted terms, making PhraseKit highly customisable and adaptable to various use cases.
+
 ## Extensibility
 
 The `PhraseKit` library is designed with extensibility in mind, allowing you to customise and extend its functionality to meet the unique needs of your project. Whether you want to load custom word lists or adjust the logic for generating word combinations, `PhraseKit` provides a flexible framework to do so.

@@ -12,22 +12,25 @@ import Foundation
 public class PhraseGenerator {
 
     /// A list of nouns used to generate phrases.
-    private var nouns: [String]
+    internal var nouns: [String]
 
     /// A list of verbs used to generate phrases.
-    private var verbs: [String]
+    internal var verbs: [String]
 
     /// A list of adjectives used to generate phrases.
-    private var adjectives: [String]
+    internal var adjectives: [String]
 
     /// A list of adverbs used to generate phrases.
-    private var adverbs: [String]
+    internal var adverbs: [String]
 
     /// A list of words provided by the user to generate phrases.
     private var customList: [String]
 
     /// A loader for custom word lists conforming to the `WordLoaderProtocol`.
     private var customLoader: WordLoaderProtocol?
+
+    /// A list of words to exclude from phrase generation.
+    private var exclusionList: [String]
 
     /// A set of previously generated word pairs to ensure uniqueness in phrase generation.
     ///
@@ -56,14 +59,16 @@ public class PhraseGenerator {
     ///
     /// This designated initializer loads the default word lists for nouns, verbs, adjectives,
     /// and adverbs from the JSON files in the module's bundle.
-    public init() {
+    public init(exclusionList: [String] = []) {
         self.nouns = WordLoader.loadWords(from: "_noun")
         self.verbs = WordLoader.loadWords(from: "_verb")
         self.adjectives = WordLoader.loadWords(from: "_adjective")
         self.adverbs = WordLoader.loadWords(from: "_adverb")
         self.customList = []
         self.customLoader = nil
+        self.exclusionList = exclusionList
         self.usedPairs = []
+        self.applyExclusionList()
     }
 
     /// Initializes the `PhraseGenerator` with word lists loaded from JSON files or a custom loader.
@@ -75,17 +80,12 @@ public class PhraseGenerator {
     ///
     /// - Parameter customLoader: An optional loader conforming to `WordLoaderProtocol`, used to
     /// load custom word lists.
-    public convenience init(customLoader: WordLoaderProtocol? = nil) {
+    public convenience init(customLoader: WordLoaderProtocol? = nil, exclusionList: [String] = []) {
+        self.init(exclusionList: exclusionList)
         if let loader = customLoader {
-            self.init()
             self.customLoader = loader
             self.customList = loader.loadWords()
-            self.nouns = []
-            self.verbs = []
-            self.adjectives = []
-            self.adverbs = []
-        } else {
-            self.init()
+            self.clearInternalWordLists()
         }
     }
 }
@@ -118,7 +118,7 @@ public extension PhraseGenerator {
     /// - Throws: `PhraseGenerationError.allCombinationsUsed` if no more unique phrases can be
     /// generated.
     /// - Returns: A unique phrase string.
-    func generateUniquePhrase() throws -> String {
+    func generate() throws -> String {
         if let phrase = generatePhrase() {
             return phrase
         } else {
@@ -130,7 +130,7 @@ public extension PhraseGenerator {
     ///
     /// - Parameter defaultPhrase: The phrase to return if no more unique phrases can be generated.
     /// - Returns: A unique phrase string or the provided default phrase.
-    func generateUniquePhrase(orDefault defaultPhrase: String) -> String {
+    func generate(withDefault defaultPhrase: String) -> String {
         return generatePhrase() ?? defaultPhrase
     }
 
@@ -138,7 +138,7 @@ public extension PhraseGenerator {
     ///
     /// - Parameter message: The message to return if no more unique phrases can be generated.
     /// - Returns: A unique phrase string or the provided custom message.
-    func generateUniquePhrase(orMessage message: String = "All combinations used") -> String {
+    func generate(withMessage message: String = "All combinations used") -> String {
         return generatePhrase() ?? message
     }
 
@@ -148,69 +148,117 @@ public extension PhraseGenerator {
         return generatePhrase() ?? ""
     }
 
-    /// Calculates the total number of possible word combinations for a custom word list.
+    /// Returns the count of possible word combinations for a given word count and combination type.
     ///
     /// - Parameters:
-    ///   - wordCount: The number of words in the phrase (either two or three).
-    ///   - customWords: The custom word list provided by the user.
-    /// - Returns: The total number of possible word combinations using the custom word list.
-    func getCustomWordCombinationCount(
+    ///   - wordCount: The number of words in the phrase.
+    ///   - combinationType: The type of word combination.
+    /// - Returns: The number of possible combinations.
+    func getWordCombinationCount(
         for wordCount: WordCount,
-        with customWords: [String]
+        combinationType: CombinationType? = nil
     ) -> Int {
-        guard !customWords.isEmpty else { return 0 }
-        let customCount = customWords.count * (customWords.count - 1)
-        return wordCount == .two ? customCount : customCount * customWords.count
+        let type = combinationType ?? (customLoader != nil ? .custom : .adjectiveNoun)
+        return calculateCombinationCount(for: wordCount, combinationType: type)
     }
 
-    /// Calculates the remaining number of possible word combinations for a custom word list.
+    /// Returns the number of remaining combinations for a given word count and combination type.
     ///
     /// - Parameters:
-    ///   - wordCount: The number of words in the phrase (either two or three).
-    ///   - customWords: The custom word list provided by the user.
-    /// - Returns: The number of remaining unused word combinations using the custom word list.
-    func getRemainingCustomCombinations(
+    ///   - wordCount: The number of words in the phrase.
+    ///   - combinationType: The type of word combination.
+    /// - Returns: The number of remaining combinations.
+    func getRemainingCombinations(
         for wordCount: WordCount,
-        with customWords: [String]
+        combinationType: CombinationType? = nil
     ) -> Int {
-        let totalCombinations = getCustomWordCombinationCount(for: wordCount, with: customWords)
+        let totalCombinations = getWordCombinationCount(
+            for: wordCount,
+            combinationType: combinationType
+        )
         return totalCombinations - usedPairs.count
     }
 
-    /// Resets the set of used pairs, allowing phrases to be generated again without duplicates.
+    /// Resets the list of used word pairs.
     func resetUsedPairs() {
         usedPairs.removeAll()
     }
 }
 
-// MARK: - Private methods
+// MARK: - Private Methods
 
-private extension PhraseGenerator {
+fileprivate extension PhraseGenerator {
 
-    /// Generates a two-word phrase with the specified combination type.
+    /// Applies the exclusion list to all word lists, removing any excluded words and updates the lists.
+    private func applyExclusionList() {
+        nouns = nouns.filter { !exclusionList.contains($0) }
+        verbs = verbs.filter { !exclusionList.contains($0) }
+        adjectives = adjectives.filter { !exclusionList.contains($0) }
+        adverbs = adverbs.filter { !exclusionList.contains($0) }
+        customList = customList.filter { !exclusionList.contains($0) }
+    }
+
+    /// Calculates the number of possible combinations for the given word count and combination
+    /// type.
     ///
-    /// - Parameter combinationType: The specific type of word combination to generate (optional).
-    /// - Returns: A string containing the generated phrase, or `nil` if no valid phrase could
-    /// be generated.
+    /// - Parameters:
+    ///   - wordCount: The number of words in the phrase.
+    ///   - combinationType: The type of word combination.
+    /// - Returns: The number of possible combinations.
+    private func calculateCombinationCount(
+        for wordCount: WordCount,
+        combinationType: CombinationType
+    ) -> Int {
+        let (list1, list2): ([String], [String]) = {
+            switch combinationType {
+                case .adjectiveNoun:
+                    return (adjectives, nouns)
+                case .verbNoun:
+                    return (verbs, nouns)
+                case .adverbVerb:
+                    return (adverbs, verbs)
+                case .adverbAdjective:
+                    return (adverbs, adjectives)
+                case .nounNoun:
+                    return (nouns, nouns)
+                case .adjectiveAdjective:
+                    return (adjectives, adjectives)
+                case .custom:
+                    return (customList, customList)
+            }
+        }()
+
+        // Ensure that excluded words are not counted
+        let filteredList1 = list1.filter { !exclusionList.contains($0) }
+        let filteredList2 = list2.filter { !exclusionList.contains($0) }
+
+        guard !filteredList1.isEmpty && !filteredList2.isEmpty else { return 0 }
+        let twoWordCombinations = filteredList1.count * filteredList2.count
+        return wordCount == .two ? twoWordCombinations : twoWordCombinations * filteredList1.count
+    }
+
+    /// Generates a two-word phrase based on the specified combination type.
+    ///
+    /// - Parameter combinationType: The type of word combination.
+    /// - Returns: A generated two-word phrase as a string, or nil if no unique phrase can be
+    /// generated.
     private func generateTwoWordPhrase(combinationType: CombinationType? = nil) -> String? {
         var pair: String
         repeat {
             pair = generateWordPair(combinationType: combinationType) ?? ""
         } while usedPairs.contains(pair)
-
-        if usedPairs.count >= getInternalWordCombinationCount(for: .two) {
+        if usedPairs.count >= getWordCombinationCount(for: .two, combinationType: combinationType) {
             return nil
         }
-
         usedPairs.insert(pair)
         return pair
     }
 
-    /// Generates a three-word phrase with the specified combination type.
+    /// Generates a three-word phrase based on the specified combination type.
     ///
-    /// - Parameter combinationType: The specific type of word combination to generate (optional).
-    /// - Returns: A string containing the generated phrase, or `nil` if no valid phrase could
-    /// be generated.
+    /// - Parameter combinationType: The type of word combination.
+    /// - Returns: A generated three-word phrase as a string, or nil if no unique phrase can be
+    /// generated.
     private func generateThreeWordPhrase(combinationType: CombinationType? = nil) -> String? {
         var triplet: String
         repeat {
@@ -219,7 +267,7 @@ private extension PhraseGenerator {
             triplet = "\(firstPart)-\(randomWord)"
         } while usedPairs.contains(triplet)
 
-        if usedPairs.count >= getInternalWordCombinationCount(for: .three) {
+        if usedPairs.count >= getWordCombinationCount(for: .three, combinationType: combinationType) {
             return nil
         }
 
@@ -227,72 +275,50 @@ private extension PhraseGenerator {
         return triplet
     }
 
-    /// Generates a word pair based on the specified combination type.
+    /// Generates a word pair based on the specified combination type or a random one if not
+    /// specified.
     ///
-    /// - Parameter combinationType: The specific type of word combination to generate (optional).
-    /// - Returns: A string containing the generated word pair, or `nil` if no valid pair could
-    /// be generated.
+    /// - Parameter combinationType: The type of word combination.
+    /// - Returns: A generated word pair as a string, or nil if no word pair can be generated.
     private func generateWordPair(combinationType: CombinationType? = nil) -> String? {
         let type = combinationType ?? CombinationType.allCases.randomElement()!
-        var pair: String
-
-        switch type {
-            case .adjectiveNoun:
-                pair = generatePair(from: adjectives, and: nouns)
-            case .verbNoun:
-                pair = generatePair(from: verbs, and: nouns)
-            case .adverbVerb:
-                pair = generatePair(from: adverbs, and: verbs)
-            case .adverbAdjective:
-                pair = generatePair(from: adverbs, and: adjectives)
-            case .nounNoun:
-                pair = generatePair(from: nouns, and: nouns)
-            case .adjectiveAdjective:
-                pair = generatePair(from: adjectives, and: adjectives)
-            case .custom:
-                pair = generatePair(from: customList, and: customList)
-        }
-
-        return pair
-    }
-    
-    /// Calculates the total number of possible word combinations for the specified word count
-    /// using internal word lists.
-    ///
-    /// - Parameter wordCount: The number of words in the phrase (either two or three).
-    /// - Returns: The total number of possible word combinations.
-    private func getInternalWordCombinationCount(for wordCount: WordCount) -> Int {
-        let adjectiveNounCount = adjectives.count * nouns.count
-        let verbNounCount = verbs.count * nouns.count
-        let adverbVerbCount = adverbs.count * verbs.count
-        let adverbAdjectiveCount = adverbs.count * adjectives.count
-        let nounNounCount = nouns.count * (nouns.count - 1)
-        let adjectiveAdjectiveCount = adjectives.count * (adjectives.count - 1)
-
-        let twoWordCombinations = adjectiveNounCount +
-        verbNounCount +
-        adverbVerbCount +
-        adverbAdjectiveCount +
-        nounNounCount +
-        adjectiveAdjectiveCount
-
-        switch wordCount {
-            case .two:
-                return twoWordCombinations
-            case .three:
-                return twoWordCombinations * nouns.count
-        }
+        return generatePair(from: type)
     }
 
-    /// Generates a word pair by selecting a random element from two provided lists.
+    /// Generates a pair of words based on the specified combination type.
     ///
-    /// - Parameters:
-    ///   - list1: The first list of words.
-    ///   - list2: The second list of words.
-    /// - Returns: A string containing the generated word pair.
-    private func generatePair(from list1: [String], and list2: [String]) -> String {
+    /// - Parameter combinationType: The type of word combination.
+    /// - Returns: A generated word pair as a string.
+    private func generatePair(from combinationType: CombinationType) -> String? {
+        let (list1, list2): ([String], [String]) = {
+            switch combinationType {
+                case .adjectiveNoun:
+                    return (adjectives, nouns)
+                case .verbNoun:
+                    return (verbs, nouns)
+                case .adverbVerb:
+                    return (adverbs, verbs)
+                case .adverbAdjective:
+                    return (adverbs, adjectives)
+                case .nounNoun:
+                    return (nouns, nouns)
+                case .adjectiveAdjective:
+                    return (adjectives, adjectives)
+                case .custom:
+                    return (customList, customList)
+            }
+        }()
+
         let word1 = list1.randomElement() ?? ""
         let word2 = list2.randomElement() ?? ""
         return "\(word1)-\(word2)"
+    }
+
+    /// Clears the internal word lists, setting them to empty arrays.
+    private func clearInternalWordLists() {
+        self.nouns = []
+        self.verbs = []
+        self.adjectives = []
+        self.adverbs = []
     }
 }
