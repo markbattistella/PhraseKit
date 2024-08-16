@@ -1,0 +1,49 @@
+name: New Word Submission
+
+description: Submit new words to be added to the PhraseKit library.
+
+title: '✨ New Word Submission'
+
+labels: ["new-word", "triage"]
+
+body:
+
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for contributing new words to the PhraseKit library!
+
+        Please enter the words you want to add, one per line, and select the appropriate parts of speech (POS) for them. You can assign multiple POS if needed.
+
+  - type: textarea
+    attributes:
+      label: New Words
+      description: Enter the words you wish to add, one per line.
+      placeholder: |
+        word1
+        word2
+        word3
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: pos
+    attributes:
+      label: Parts of Speech (POS)
+      description: Select the appropriate parts of speech for the words you're submitting. You can select multiple options if applicable.
+      options:
+        - label: Noun
+        - label: Verb
+        - label: Adjective
+        - label: Adverb
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting these words, you agree to follow our Code of Conduct.
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true

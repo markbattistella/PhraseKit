@@ -1,0 +1,52 @@
+name: Process New Word Submission
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  process-new-word:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Extract issue details
+      id: extract
+      run: |
+        echo "WORDS=$(echo '${{ github.event.issue.body }}' | sed -n '/^New Words/,/^$/p' | tail -n +2)" >> $GITHUB_ENV
+        echo "POS=$(echo '${{ github.event.issue.body }}' | sed -n '/^Parts of Speech/,/^$/p' | tail -n +2 | sed 's/- //g')" >> $GITHUB_ENV
+        echo "GITHUB_ISSUE_NUMBER=${{ github.event.issue.number }}" >> $GITHUB_ENV
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install jsonschema PyGithub
+
+    - name: Process and update JSON
+      run: |
+        python3 scripts/update_pending_json.py "$WORDS" "$POS"
+
+    - name: Commit changes
+      if: success()
+      run: |
+        BRANCH_NAME=$(date +"%Y-%m")
+        git checkout -b $BRANCH_NAME || git checkout $BRANCH_NAME
+        git add Sources/PhraseKit/Resources/*.json
+        git commit -m "Add new words to pending lists in JSON files from issue #${{ github.event.issue.number }}"
+        git push origin $BRANCH_NAME
+
+    - name: Create Pull Request
+      if: success()
+      run: |
+        gh pr create --title "Monthly Merge: $BRANCH_NAME" \
+                     --body "This PR merges the changes for $BRANCH_NAME." \
+                     --base main \
+                     --head $BRANCH_NAME \
+                     --label "monthly-merge"
