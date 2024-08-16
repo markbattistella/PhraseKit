@@ -25,7 +25,7 @@ jobs:
       - name: Run Validation Script
         id: validation
         run: |
-          node ./github/scripts/scanner.js ./Sources/PhraseKit/Resources/ pending
+          node ./.github/scripts/scanner.js ./Sources/PhraseKit/Resources/ pending
 
       - name: Merge Pull Request
         if: success()
