@@ -10,7 +10,7 @@ env:
 jobs:
   add:
     runs-on: ubuntu-20.04
-    if: contains(github.event.issue.labels.*.name, 'Add Words')
+    if: contains(github.event.issue.labels.*.name, 'new-word')
 
     steps:
       - name: Checkout
