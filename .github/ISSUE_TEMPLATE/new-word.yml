@@ -26,13 +26,14 @@ body:
     validations:
       required: true
 
-  - type: checkboxes
+
+  - type: dropdown
     id: pos
     attributes:
       label: Parts of Speech (POS)
       description: Select the appropriate parts of speech for the words you're submitting. You can select multiple options if applicable.
+      multiple: true
       options:
-        - required: true
         - label: Noun
         - label: Verb
         - label: Adjective
