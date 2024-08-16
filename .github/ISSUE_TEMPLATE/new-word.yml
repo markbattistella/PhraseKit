@@ -29,6 +29,7 @@ body:
   - type: checkboxes
     id: pos
     attributes:
+      required: true
       label: Parts of Speech (POS)
       description: Select the appropriate parts of speech for the words you're submitting. You can select multiple options if applicable.
       options:
@@ -36,7 +37,6 @@ body:
         - label: Verb
         - label: Adjective
         - label: Adverb
-          required: true
     validations:
       required: true
 

@@ -1,55 +1,78 @@
-name: Process New Word Submission
+name: Process Word Submission
 
 on:
-  workflow_dispatch:
   issues:
-    types: [opened]
+    types: [opened, reopened]
+
+env:
+  SWIFT_IMAGE: swiftlang/swift@sha256:30154112a700a5a95fd1760716bd2040e8b735f54f081a4865823abdec67d17e  # Update this hash as needed
 
 jobs:
-  process-new-word:
-    runs-on: ubuntu-latest
+  add:
+    runs-on: ubuntu-20.04
+    if: contains(github.event.issue.labels.*.name, 'Add Words')
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v3
 
-    - name: Extract issue details
-      id: extract
-      run: |
-        echo "WORDS=$(echo '${{ github.event.issue.body }}' | tr -d '\r' | sed -n '/^New Words/,/^$/p' | tail -n +2)" >> $GITHUB_ENV
-        echo "POS=$(echo '${{ github.event.issue.body }}' | tr -d '\r' | sed -n '/^Parts of Speech/,/^$/p' | tail -n +2 | sed 's/- //g')" >> $GITHUB_ENV
-        echo "GITHUB_ISSUE_NUMBER=${{ github.event.issue.number }}" >> $GITHUB_ENV
+      - name: Add Words to JSON
+        run: docker run --rm -e CI=true -e GH_BODY="$GH_BODY" -v "$PWD:/host" -w /host $SWIFT_IMAGE swift .github/add_words.swift
+        env:
+          GH_BODY: ${{ github.event.issue.body }}
 
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.14.0-alpha.0'
-        allow-prereleases: true
-        architecture: 'arm64'
+      - name: Validate JSON
+        run: docker run --rm -e CI=true -v "$PWD:/host" -w /host $SWIFT_IMAGE swift validate_words.swift
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install jsonschema PyGithub
+      - name: Check for Changes
+        run: bash .github/check_for_changes.sh
+        id: check
 
-    - name: Process and update JSON
-      run: |
-        python3 scripts/add-word.py "$WORDS" "$POS"
+      - name: Create Pull Request
+        id: cpr
+        if: steps.check.outputs.changes == 'true'
+        uses: peter-evans/create-pull-request@v3
+        with:
+          add-paths: |
+            Sources/PhraseKit/Resources/_adjective.json
+            Sources/PhraseKit/Resources/_adverb.json
+            Sources/PhraseKit/Resources/_noun.json
+            Sources/PhraseKit/Resources/_verb.json
+          commit-message: ${{ github.event.issue.title }}
+          title: ${{ github.event.issue.title }}
+          branch: auto-add-${{ github.event.issue.number }}
+          delete-branch: true
+          body: |
+            Closes #${{ github.event.issue.number }}
 
-    - name: Commit changes
-      if: success()
-      run: |
-        BRANCH_NAME=$(date +"%Y-%m")
-        git checkout -b $BRANCH_NAME || git checkout $BRANCH_NAME
-        git add Sources/PhraseKit/Resources/*.json
-        git commit -m "Add new words to pending lists in JSON files from issue #${{ github.event.issue.number }}"
-        git push origin $BRANCH_NAME
+            ## Original Message
 
-    - name: Create Pull Request
-      if: success()
-      run: |
-        gh pr create --title "Monthly Merge: $BRANCH_NAME" \
-                     --body "This PR merges the changes for $BRANCH_NAME." \
-                     --base main \
-                     --head $BRANCH_NAME \
-                     --label "monthly-merge"
+            ${{ github.event.issue.body }}
+          committer: GitHub <noreply@github.com>
+          author: GitHub <noreply@github.com>
+
+      - name: Update Issue (Success)
+        if: steps.check.outputs.changes == 'true'
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Thank you! We will approve and add these words with #${{ steps.cpr.outputs.pull-request-number }}.'
+            })
+
+      - name: Update Issue (Failure)
+        if: ${{ failure() || steps.check.outputs.changes != 'true' }}
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: 'It looks like there’s nothing to do here!\n\nPlease ensure your submission contains valid words.'
+            })
