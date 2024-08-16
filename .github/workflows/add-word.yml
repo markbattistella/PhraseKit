@@ -25,7 +25,10 @@ jobs:
           GH_BODY: ${{ github.event.issue.body }}
 
       - name: Validate JSON
+        id: validate
         run: docker run --rm -e CI=true -v "$PWD:/host" -w /host $SWIFT_IMAGE swift .github/validate_words.swift
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check for Changes
         run: bash .github/check_for_changes.sh
