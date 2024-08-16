@@ -53,11 +53,15 @@ jobs:
           echo "YEAR_MONTH=$(date +'%Y.%m')" >> $GITHUB_ENV
           echo "FULL_DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
 
-      - name: Pull Latest Changes
+      - name: Pull or Create Branch
         run: |
           git fetch origin ${{ env.YEAR_MONTH }}-word-additions || true
-          git checkout ${{ env.YEAR_MONTH }}-word-additions || git checkout -b ${{ env.YEAR_MONTH }}-word-additions
-          git pull origin ${{ env.YEAR_MONTH }}-word-additions --rebase || true
+          if git rev-parse --verify origin/${{ env.YEAR_MONTH }}-word-additions > /dev/null 2>&1; then
+            git checkout ${{ env.YEAR_MONTH }}-word-additions
+            git pull origin ${{ env.YEAR_MONTH }}-word-additions --rebase
+          else
+            git checkout -b ${{ env.YEAR_MONTH }}-word-additions
+          fi
 
       - name: Process Words and Update JSON
         run: |
@@ -88,9 +92,9 @@ jobs:
             Sources/PhraseKit/Resources/_noun.json
             Sources/PhraseKit/Resources/_verb.json
           commit-message: ${{ env.FULL_DATE }} - New Word Additions - #${{ github.event.issue.number }}
-          title: ${{ github.event.issue.title }}
+          title: "New Word Additions for ${{ env.YEAR_MONTH }}"
           branch: ${{ env.YEAR_MONTH }}-word-additions
-          delete-branch: true
+          delete-branch: false
           body: |
             Closes #${{ github.event.issue.number }}
 
