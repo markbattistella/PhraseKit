@@ -13,3 +13,4 @@ Package.pins
 Package.resolved
 .env
 *.secrets
+.vscode

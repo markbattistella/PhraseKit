@@ -36,6 +36,7 @@ body:
         - label: Verb
         - label: Adjective
         - label: Adverb
+          required: true
     validations:
       required: true
 
