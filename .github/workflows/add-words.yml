@@ -97,15 +97,15 @@ jobs:
         if: steps.check.outputs.changes == 'true' && env.PR_EXISTS == 'false'
         uses: peter-evans/create-pull-request@v6
         with:
-          token: $GITHUB_TOKEN
+          token: ${{ env.BOT_ACCESS_TOKEN }}
           add-paths: |
             Sources/PhraseKit/Resources/_adjective.json
             Sources/PhraseKit/Resources/_adverb.json
             Sources/PhraseKit/Resources/_noun.json
             Sources/PhraseKit/Resources/_verb.json
           commit-message: ${{ env.FULL_DATE }} - New Word Additions - #${{ github.event.issue.number }}
-          title: ${{ env.YEAR_MONTH }} - New Word Additions
           base: main
+          title: ${{ env.YEAR_MONTH }} - New Word Additions
           branch: ${{ env.YEAR_MONTH }}-word-additions
           delete-branch: false
           body: |
