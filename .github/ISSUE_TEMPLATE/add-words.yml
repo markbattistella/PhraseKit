@@ -4,7 +4,7 @@ description: Submit new words to be added to the PhraseKit library.
 
 title: '✨ New Word Submission'
 
-labels: ["new-word", "triage"]
+labels: ["add-word"]
 
 body:
 
