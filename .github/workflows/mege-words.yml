@@ -1,7 +1,6 @@
 name: Validate and Merge Pull Request
 
 on:
-  workflow_dispatch:
   pull_request:
     types: [opened, synchronize]
 
@@ -28,8 +27,13 @@ jobs:
         run: |
           node ./.github/scripts/scanner.js ./Sources/PhraseKit/Resources/ pending
 
-      - name: Comment on Validation Results
-        if: success() || failure()
+      - name: Merge Pull Request
+        if: success()
+        run: |
+          gh pr merge ${{ github.event.pull_request.number }} --merge --admin
+
+      - name: Comment on Failure
+        if: failure()
         uses: actions/github-script@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -37,24 +41,9 @@ jobs:
             const fs = require('fs');
             const output = fs.readFileSync('validation_output.txt', 'utf8');
             github.pulls.createReview({
+              pull_number: context.payload.pull_request.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number,
-              body: `Validation results:\n\n\`\`\`\n${output}\n\`\`\``,
-              event: 'COMMENT'
-            })
-  
-      - name: Comment on Failure
-        if: failure()
-        uses: actions/github-script@v3
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            github.pulls.createReview({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number,
-              body: 'Validation failed. Please check the details and make necessary changes.',
-              event: 'REQUEST_CHANGES'
-            })
-  
+              body: `Validation failed with the following details:\n\`\`\`\n${output}\n\`\`\`\nPlease check the details and make necessary changes.`,
+              event: "REQUEST_CHANGES"
+            });

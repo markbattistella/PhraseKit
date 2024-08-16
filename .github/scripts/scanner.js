@@ -1,18 +1,37 @@
-const fs = require('fs');
-const path = require('path');
-
 /**
  * @file scanner.js
  * @description This script processes JSON files containing word lists and categorizes words into different categories based on specific rules. The categories include "pending," "safe," "unsafe," and "incompatible." The script also provides detailed logs for each file processed, including counts of words moved or skipped.
- * @version 1.0.0
+ * @version 1.1.0
  * @license MIT
  */
+
+const fs = require('fs');
+const path = require('path'); // Ensure path is required at the top
 
 /**
  * @constant {Set<string>} blacklist
  * @description A set of words considered "unsafe," loaded from the prohibited.json file. Words found in this set are categorized as "unsafe."
  */
 const blacklist = new Set(require('./prohibited.json'));
+
+/**
+ * @constant {string} outputFile
+ * @description The file where all console logs will be written. This is useful for capturing output during the script execution.
+ */
+const outputFile = 'validation_output.txt';
+
+// Initialize the output file (clears existing content)
+fs.writeFileSync(outputFile, '');
+
+/**
+ * @function log
+ * @description Logs messages to both the console and a file. This ensures that the output is captured during script execution.
+ * @param {string} message - The message to log.
+ */
+function log(message) {
+  console.log(message);
+  fs.appendFileSync(outputFile, message + '\n');
+}
 
 /**
  * @function processJsonFile
@@ -24,19 +43,19 @@ const blacklist = new Set(require('./prohibited.json'));
  */
 const processJsonFile = (filePath, rescanOptions, index, totalFiles) => {
   const fileName = path.basename(filePath);
-  console.log(`[${index + 1} / ${totalFiles}] WORKING ON FILE`);
-  console.log(`  - File: "${fileName}"`);
+  log(`[${index + 1} / ${totalFiles}] WORKING ON FILE`);
+  log(`  - File: "${fileName}"`);
 
   const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
 
   // Extract categories from the JSON data
   const { pending = [], safe = [], unsafe = [], incompatible = [] } = data;
 
-  console.log(`  - Initial counts:`);
-  console.log(`      | Pending      | ${String(pending.length).padStart(6)}`);
-  console.log(`      | Safe         | ${String(safe.length).padStart(6)}`);
-  console.log(`      | Unsafe       | ${String(unsafe.length).padStart(6)}`);
-  console.log(`      | Incompatible | ${String(incompatible.length).padStart(6)}`);
+  log(`  - Initial counts:`);
+  log(`      | Pending      | ${String(pending.length).padStart(6)}`);
+  log(`      | Safe         | ${String(safe.length).padStart(6)}`);
+  log(`      | Unsafe       | ${String(unsafe.length).padStart(6)}`);
+  log(`      | Incompatible | ${String(incompatible.length).padStart(6)}`);
 
   // Arrays to store the new categorization
   let newSafe = [...safe];  // Keep existing safe words
@@ -57,7 +76,7 @@ const processJsonFile = (filePath, rescanOptions, index, totalFiles) => {
    * @param {string} category - The category of words being processed (e.g., "pending," "safe," "unsafe").
    */
   const processWords = (words, category) => {
-    console.log(`  - Processing "${category}" category with ${words.length} words`);
+    log(`  - Processing "${category}" category with ${words.length} words`);
     words.forEach(word => {
       if (word.includes(' ')) {
         newIncompatible.push(word);
@@ -116,14 +135,14 @@ const processJsonFile = (filePath, rescanOptions, index, totalFiles) => {
   // Rename the temporary file to overwrite the original file
   fs.renameSync(tempFilePath, filePath);
 
-  console.log(`  - Moved:`);
-  console.log(`      | ${String(movedToSafe).padStart(5)} words: Pending --> Safe`);
-  console.log(`      | ${String(movedToUnsafe).padStart(5)} words: Pending --> Unsafe`);
-  console.log(`      | ${String(movedToIncompatible).padStart(5)} words: Pending --> Incompatible`);
-  console.log(`  - Skipped:`);
-  console.log(`      | ${String(skippedSafe).padStart(5)} words already in Safe`);
-  console.log(`      | ${String(skippedUnsafe).padStart(5)} words already in Unsafe`);
-  console.log(`  - Processed and updated\n`);
+  log(`  - Moved:`);
+  log(`      | ${String(movedToSafe).padStart(5)} words: Pending --> Safe`);
+  log(`      | ${String(movedToUnsafe).padStart(5)} words: Pending --> Unsafe`);
+  log(`      | ${String(movedToIncompatible).padStart(5)} words: Pending --> Incompatible`);
+  log(`  - Skipped:`);
+  log(`      | ${String(skippedSafe).padStart(5)} words already in Safe`);
+  log(`      | ${String(skippedUnsafe).padStart(5)} words already in Unsafe`);
+  log(`  - Processed and updated\n`);
 };
 
 /**
@@ -164,23 +183,23 @@ const main = (baseDir, rescanOption) => {
   const files = getAllJsonFiles(baseDir);
 
   if (files.length === 0) {
-    console.error('No files found matching the pattern.');
+    log('No files found matching the pattern.');
     return;
   }
 
-  console.log(`\n[i] FOUND ${files.length} JSON FILES\n`);
+  log(`\n[i] FOUND ${files.length} JSON FILES\n`);
 
   files.forEach((filePath, index) => processJsonFile(filePath, rescanOption, index, files.length));
 
-  console.log('[i] PROCESS COMPLETE');
+  log('[i] PROCESS COMPLETE');
 };
 
 // Get the base directory and rescan option from the command line arguments and run the script
 const [baseDir, rescanOptionArg] = process.argv.slice(2);
 
 if (!baseDir) {
-  console.error('Usage: node scanner.js /path/to/files <rescan_option>');
-  console.error('Rescan options: pending (default), safe, unsafe, all');
+  log('Usage: node scanner.js /path/to/files <rescan_option>');
+  log('Rescan options: pending (default), safe, unsafe, all');
   process.exit(1);
 }
 

@@ -23,6 +23,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Update Issue Title
+        uses: actions/github-script@v4
+        with:
+          github-token: ${{ env.GITHUB_TOKEN }}
+          script: |
+            const issueBody = process.env.GITHUB_EVENT_PATH ? require(process.env.GITHUB_EVENT_PATH).issue.body : '';
+            const wordsSection = issueBody.split('### New Words')[1]?.split('### Parts of Speech (POS)')[0] || '';
+            const wordList = wordsSection.split('\n').filter(line => line.trim() !== '').map(line => line.trim());
+            const wordCount = wordList.length;
+            const newTitle = `Adding ${wordCount} new words`;
+            github.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              title: newTitle
+            });
+
       - name: Cache Docker Image
         id: cache-docker
         uses: actions/cache@v4
@@ -85,7 +102,7 @@ jobs:
 
       - name: Update Issue (Success)
         if: steps.check.outputs.changes == 'true'
-        uses: actions/github-script@v3
+        uses: actions/github-script@v4
         with:
           github-token: ${{ env.GITHUB_TOKEN }}
           script: |
@@ -98,7 +115,7 @@ jobs:
 
       - name: Update and Lock Issue (Failure)
         if: steps.check.outputs.changes != 'true'
-        uses: actions/github-script@v3
+        uses: actions/github-script@v4
         with:
           github-token: ${{ env.GITHUB_TOKEN }}
           script: |
