@@ -26,7 +26,6 @@ body:
     validations:
       required: true
 
-
   - type: dropdown
     id: pos
     attributes:
@@ -34,10 +33,10 @@ body:
       description: Select the appropriate parts of speech for the words you're submitting. You can select multiple options if applicable.
       multiple: true
       options:
-        - label: Noun
-        - label: Verb
-        - label: Adjective
-        - label: Adverb
+        - Noun
+        - Verb
+        - Adjective
+        - Adverb
     validations:
       required: true
 
