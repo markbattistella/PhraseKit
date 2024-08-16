@@ -28,20 +28,33 @@ jobs:
         run: |
           node ./.github/scripts/scanner.js ./Sources/PhraseKit/Resources/ pending
 
-      - name: Merge Pull Request
-        if: success()
-        run: |
-          gh pr merge ${{ github.event.pull_request.number }} --merge --admin
-
+      - name: Comment on Validation Results
+        if: success() || failure()
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const output = fs.readFileSync('validation_output.txt', 'utf8');
+            github.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              body: `Validation results:\n\n\`\`\`\n${output}\n\`\`\``,
+              event: 'COMMENT'
+            })
+  
       - name: Comment on Failure
         if: failure()
         uses: actions/github-script@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            github.issues.createComment({
-              issue_number: context.issue.number,
+            github.pulls.createReview({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: 'Validation failed. Please check the details and make necessary changes.'
+              pull_number: context.payload.pull_request.number,
+              body: 'Validation failed. Please check the details and make necessary changes.',
+              event: 'REQUEST_CHANGES'
             })
+  

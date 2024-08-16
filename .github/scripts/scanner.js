@@ -1,3 +1,6 @@
+const fs = require('fs');
+const path = require('path');
+
 /**
  * @file scanner.js
  * @description This script processes JSON files containing word lists and categorizes words into different categories based on specific rules. The categories include "pending," "safe," "unsafe," and "incompatible." The script also provides detailed logs for each file processed, including counts of words moved or skipped.
