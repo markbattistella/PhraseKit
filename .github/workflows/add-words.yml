@@ -50,7 +50,7 @@ jobs:
       - name: Check for Changes
         run: bash .github/scripts/check_for_changes.sh
         id: check
-
+  
       - name: Create Pull Request
         id: cpr
         if: steps.check.outputs.changes == 'true'
@@ -88,7 +88,7 @@ jobs:
             })
 
       - name: Update Issue (Failure)
-        if: ${{ failure() || steps.check.outputs.changes != 'true' }}
+        if: steps.check.outputs.changes != 'true'
         uses: actions/github-script@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}

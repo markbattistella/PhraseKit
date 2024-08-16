@@ -9,4 +9,4 @@ fi
 
 # Output the result for use in the GitHub Actions step
 CHANGES=$(cat /tmp/changes)
-echo "{changes}=$CHANGES" >> $GITHUB_OUTPUT
+echo "changes=$CHANGES" >> $GITHUB_OUTPUT
