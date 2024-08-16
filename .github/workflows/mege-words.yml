@@ -1,0 +1,45 @@
+name: Validate and Merge Pull Request
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  merge:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Run Validation Script
+        id: validation
+        run: |
+          node ./github/scripts/scanner.js ./Sources/PhraseKit/Resources/ pending
+
+      - name: Merge Pull Request
+        if: success()
+        run: |
+          gh pr merge ${{ github.event.pull_request.number }} --merge --admin
+
+      - name: Comment on Failure
+        if: failure()
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Validation failed. Please check the details and make necessary changes.'
+            })

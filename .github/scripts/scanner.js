@@ -9,7 +9,7 @@
  * @constant {Set<string>} blacklist
  * @description A set of words considered "unsafe," loaded from the prohibited.json file. Words found in this set are categorized as "unsafe."
  */
-const blacklist = new Set(require('./prohibited.json')); // Assuming you run from the Filter directory
+const blacklist = new Set(require('./prohibited.json'));
 
 /**
  * @function processJsonFile

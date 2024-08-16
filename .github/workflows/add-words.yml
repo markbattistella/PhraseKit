@@ -71,7 +71,7 @@ jobs:
             Sources/PhraseKit/Resources/_adverb.json
             Sources/PhraseKit/Resources/_noun.json
             Sources/PhraseKit/Resources/_verb.json
-          commit-message: ${{ env.FULL_DATE }} - New Word Additions - #${{ github.event.issue.number }}
+          commit-message: ${{ env.FULL_DATE }} - New Word Additions
           title: "New Word Additions for Issue #${{ github.event.issue.number }}"
           branch: word-addition-${{ github.event.issue.number }}
           delete-branch: true
@@ -84,7 +84,7 @@ jobs:
           committer: "mb-actions[bot] <markbattistella-bot@users.noreply.github.com>"
           author: "mb-actions[bot] <markbattistella-bot@users.noreply.github.com>"
 
-      - name: Update Issue with PR Link
+      - name: Update Issue (Success)
         if: steps.check.outputs.changes == 'true'
         uses: actions/github-script@v3
         with:
@@ -97,7 +97,7 @@ jobs:
               body: 'Thank you! Your word additions have been processed. They will be merged with PR #${{ steps.cpr.outputs.pull-request-number }}.'
             })
 
-      - name: Lock Issue and Request Changes
+      - name: Update and Lock Issue (Failure)
         if: steps.check.outputs.changes != 'true'
         uses: actions/github-script@v3
         with:
