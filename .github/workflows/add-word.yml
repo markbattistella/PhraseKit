@@ -1,6 +1,7 @@
 name: Process New Word Submission
 
 on:
+  workflow_dispatch:
   issues:
     types: [opened]
 
@@ -15,14 +16,16 @@ jobs:
     - name: Extract issue details
       id: extract
       run: |
-        echo "WORDS=$(echo '${{ github.event.issue.body }}' | sed -n '/^New Words/,/^$/p' | tail -n +2)" >> $GITHUB_ENV
-        echo "POS=$(echo '${{ github.event.issue.body }}' | sed -n '/^Parts of Speech/,/^$/p' | tail -n +2 | sed 's/- //g')" >> $GITHUB_ENV
+        echo "WORDS=$(echo '${{ github.event.issue.body }}' | tr -d '\r' | sed -n '/^New Words/,/^$/p' | tail -n +2)" >> $GITHUB_ENV
+        echo "POS=$(echo '${{ github.event.issue.body }}' | tr -d '\r' | sed -n '/^Parts of Speech/,/^$/p' | tail -n +2 | sed 's/- //g')" >> $GITHUB_ENV
         echo "GITHUB_ISSUE_NUMBER=${{ github.event.issue.number }}" >> $GITHUB_ENV
 
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.x'
+        python-version: '3.12.5'
+        allow-prereleases: true
+        architecture: 'arm64'
 
     - name: Install dependencies
       run: |
@@ -31,7 +34,7 @@ jobs:
 
     - name: Process and update JSON
       run: |
-        python3 scripts/update_pending_json.py "$WORDS" "$POS"
+        python3 scripts/add-word.py "$WORDS" "$POS"
 
     - name: Commit changes
       if: success()
