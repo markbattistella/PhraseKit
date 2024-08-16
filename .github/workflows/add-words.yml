@@ -82,9 +82,19 @@ jobs:
           git commit -m "${{ env.FULL_DATE }} - New Word Additions - #${{ github.event.issue.number }}"
           git push origin ${{ env.YEAR_MONTH }}-word-additions --force
 
+      - name: Check if Open PR Exists
+        id: pr_exists
+        run: |
+          prs=$(gh pr list --head ${{ env.YEAR_MONTH }}-word-additions --state open --json number)
+          if [[ "$prs" == "[]" ]]; then
+            echo "PR_EXISTS=false" >> $GITHUB_ENV
+          else
+            echo "PR_EXISTS=true" >> $GITHUB_ENV
+          fi
+
       - name: Create Pull Request
         id: cpr
-        if: steps.check.outputs.changes == 'true' && env.BRANCH_EXISTS == 'false'
+        if: steps.check.outputs.changes == 'true' && env.PR_EXISTS == 'false'
         uses: peter-evans/create-pull-request@v3
         with:
           token: ${{ env.BOT_ACCESS_TOKEN }}
