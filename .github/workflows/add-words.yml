@@ -2,7 +2,7 @@ name: Process Word Submission
 
 on:
   issues:
-    types: [opened, reopened]
+    types: [opened, reopened, edited]
 
 env:
   SWIFT_IMAGE: swiftlang/swift@sha256:30154112a700a5a95fd1760716bd2040e8b735f54f081a4865823abdec67d17e
@@ -21,11 +21,11 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Cache Docker Image
         id: cache-docker
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: /tmp/.docker-cache
           key: ${{ runner.os }}-swift-${{ env.SWIFT_IMAGE }}
@@ -50,20 +50,7 @@ jobs:
       - name: Set Date Variables
         id: set_date
         run: |
-          echo "YEAR_MONTH=$(date +'%Y.%m')" >> $GITHUB_ENV
           echo "FULL_DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
-
-      - name: Pull or Create Branch
-        run: |
-          git fetch origin ${{ env.YEAR_MONTH }}-word-additions || true
-          if git rev-parse --verify origin/${{ env.YEAR_MONTH }}-word-additions > /dev/null 2>&1; then
-            git checkout ${{ env.YEAR_MONTH }}-word-additions
-            git pull origin ${{ env.YEAR_MONTH }}-word-additions --rebase
-            echo "BRANCH_EXISTS=true" >> $GITHUB_ENV
-          else
-            git checkout -b ${{ env.YEAR_MONTH }}-word-additions
-            echo "BRANCH_EXISTS=false" >> $GITHUB_ENV
-          fi
 
       - name: Process Words and Update JSON
         run: |
@@ -73,41 +60,20 @@ jobs:
         run: bash .github/scripts/check_for_changes.sh
         id: check
 
-      - name: Commit Changes
-        if: steps.check.outputs.changes == 'true'
-        run: |
-          git config user.email "markbattistella-bot@users.noreply.github.com"
-          git config user.name "mb-actions[bot]"
-          git add Sources/PhraseKit/Resources/*.json
-          git commit -m "${{ env.FULL_DATE }} - New Word Additions - #${{ github.event.issue.number }}"
-          git push origin ${{ env.YEAR_MONTH }}-word-additions --force
-
-      - name: Check if Open PR Exists
-        id: pr_exists
-        run: |
-          prs=$(gh pr list --head ${{ env.YEAR_MONTH }}-word-additions --state open --json number)
-          if [[ "$prs" == "[]" ]]; then
-            echo "PR_EXISTS=false" >> $GITHUB_ENV
-          else
-            echo "PR_EXISTS=true" >> $GITHUB_ENV
-          fi
-
       - name: Create Pull Request
         id: cpr
-        if: steps.check.outputs.changes == 'true' && env.PR_EXISTS == 'false'
+        if: steps.check.outputs.changes == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ env.BOT_ACCESS_TOKEN }}
           add-paths: |
             Sources/PhraseKit/Resources/_adjective.json
             Sources/PhraseKit/Resources/_adverb.json
             Sources/PhraseKit/Resources/_noun.json
             Sources/PhraseKit/Resources/_verb.json
           commit-message: ${{ env.FULL_DATE }} - New Word Additions - #${{ github.event.issue.number }}
-          base: main
-          title: ${{ env.YEAR_MONTH }} - New Word Additions
-          branch: ${{ env.YEAR_MONTH }}-word-additions
-          delete-branch: false
+          title: "New Word Additions for Issue #${{ github.event.issue.number }}"
+          branch: word-addition-${{ github.event.issue.number }}
+          delete-branch: true
           body: |
             Closes #${{ github.event.issue.number }}
 
@@ -117,7 +83,7 @@ jobs:
           committer: "mb-actions[bot] <markbattistella-bot@users.noreply.github.com>"
           author: "mb-actions[bot] <markbattistella-bot@users.noreply.github.com>"
 
-      - name: Update Issue (Success)
+      - name: Update Issue with PR Link
         if: steps.check.outputs.changes == 'true'
         uses: actions/github-script@v3
         with:
@@ -127,18 +93,25 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: 'Thank you! We will approve and add these words with #${{ steps.cpr.outputs.pull-request-number }}.'
+              body: 'Thank you! Your word additions have been processed. They will be merged with PR #${{ steps.cpr.outputs.pull-request-number }}.'
             })
 
-      - name: Update Issue (Failure)
+      - name: Lock Issue and Request Changes
         if: steps.check.outputs.changes != 'true'
         uses: actions/github-script@v3
         with:
           github-token: ${{ env.GITHUB_TOKEN }}
           script: |
-            github.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: 'It looks like there’s nothing to do here!\n\nPlease ensure your submission contains valid words.'
+            github.issues.lock({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              lock_reason: "resolved"
             })
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'It looks like there is an issue with your submission. Please edit the original issue with your corrections, and it will be reprocessed.'
+            })
+          
