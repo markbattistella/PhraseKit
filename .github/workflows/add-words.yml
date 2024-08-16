@@ -70,6 +70,8 @@ jobs:
       - name: Commit Changes
         if: steps.check.outputs.changes == 'true'
         run: |
+          git config user.email "markbattistella-bot@users.noreply.github.com"
+          git config user.name "mb-actions[bot]"
           git add Sources/PhraseKit/Resources/*.json
           git commit -m "${{ env.FULL_DATE }} - New Word Additions - #${{ github.event.issue.number }}"
           git push origin ${{ env.YEAR_MONTH }}-word-additions --force
