@@ -92,7 +92,7 @@ jobs:
             Sources/PhraseKit/Resources/_noun.json
             Sources/PhraseKit/Resources/_verb.json
           commit-message: ${{ env.FULL_DATE }} - New Word Additions - #${{ github.event.issue.number }}
-          title: "New Word Additions for ${{ env.YEAR_MONTH }}"
+          title: ${{ env.YEAR_MONTH }} - New Word Additions
           branch: ${{ env.YEAR_MONTH }}-word-additions
           delete-branch: false
           body: |
