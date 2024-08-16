@@ -4,6 +4,9 @@ on:
   pull_request:
     types: [opened, synchronize]
 
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 permissions:
   contents: write
   pull-requests: write
@@ -31,12 +34,15 @@ jobs:
         if: success()
         run: |
           gh pr merge ${{ github.event.pull_request.number }} --merge --admin
+        env:
+          GH_TOKEN: ${{ env.GITHUB_TOKEN }}
+
 
       - name: Comment on Failure
         if: failure()
         uses: actions/github-script@v3
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ env.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
             const output = fs.readFileSync('validation_output.txt', 'utf8');
