@@ -59,8 +59,10 @@ jobs:
           if git rev-parse --verify origin/${{ env.YEAR_MONTH }}-word-additions > /dev/null 2>&1; then
             git checkout ${{ env.YEAR_MONTH }}-word-additions
             git pull origin ${{ env.YEAR_MONTH }}-word-additions --rebase
+            echo "BRANCH_EXISTS=true" >> $GITHUB_ENV
           else
             git checkout -b ${{ env.YEAR_MONTH }}-word-additions
+            echo "BRANCH_EXISTS=false" >> $GITHUB_ENV
           fi
 
       - name: Process Words and Update JSON
@@ -82,7 +84,7 @@ jobs:
 
       - name: Create Pull Request
         id: cpr
-        if: steps.check.outputs.changes == 'true'
+        if: steps.check.outputs.changes == 'true' && env.BRANCH_EXISTS == 'false'
         uses: peter-evans/create-pull-request@v3
         with:
           token: ${{ env.BOT_ACCESS_TOKEN }}
