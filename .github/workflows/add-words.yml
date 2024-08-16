@@ -8,6 +8,7 @@ env:
   SWIFT_IMAGE: swiftlang/swift@sha256:30154112a700a5a95fd1760716bd2040e8b735f54f081a4865823abdec67d17e
 
 permissions:
+  contents: write
   issues: write
 
 jobs:
@@ -56,6 +57,7 @@ jobs:
         if: steps.check.outputs.changes == 'true'
         uses: peter-evans/create-pull-request@v3
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           add-paths: |
             Sources/PhraseKit/Resources/_adjective.json
             Sources/PhraseKit/Resources/_adverb.json
