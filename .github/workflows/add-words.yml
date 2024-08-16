@@ -47,11 +47,6 @@ jobs:
         run: |
           echo "${{ github.event.issue.body }}" > issue_body.txt
 
-      - name: Set Date Variables
-        id: set_date
-        run: |
-          echo "FULL_DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
-
       - name: Process Words and Update JSON
         run: |
           docker run --rm -e CI=true -v "$PWD:/host" -w /host $SWIFT_IMAGE swift .github/scripts/add-words.swift issue_body.txt
@@ -71,16 +66,20 @@ jobs:
             Sources/PhraseKit/Resources/_adverb.json
             Sources/PhraseKit/Resources/_noun.json
             Sources/PhraseKit/Resources/_verb.json
-          commit-message: ${{ env.FULL_DATE }} - New Word Additions
-          title: "New Word Additions for Issue #${{ github.event.issue.number }}"
+          commit-message: ${{ github.event.issue.title }}
+          title: ${{ github.event.issue.title }}
           branch: word-addition-${{ github.event.issue.number }}
           delete-branch: true
+          labels: |
+            mb-cli
           body: |
             Closes #${{ github.event.issue.number }}
 
             ## Original Message
 
+            ```markdown
             ${{ github.event.issue.body }}
+            ```
           committer: "mb-actions[bot] <markbattistella-bot@users.noreply.github.com>"
           author: "mb-actions[bot] <markbattistella-bot@users.noreply.github.com>"
 

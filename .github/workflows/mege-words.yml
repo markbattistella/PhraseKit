@@ -11,6 +11,7 @@ permissions:
 jobs:
   merge:
     runs-on: ubuntu-22.04
+    if: contains(github.event.pull_request.labels.*.name, 'mb-cli')
 
     steps:
       - name: Checkout
