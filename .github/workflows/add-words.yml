@@ -5,14 +5,14 @@ on:
     types: [opened, reopened]
 
 env:
-  SWIFT_IMAGE: swift:latest
+  SWIFT_IMAGE: swiftlang/swift@sha256:30154112a700a5a95fd1760716bd2040e8b735f54f081a4865823abdec67d17e # swiftlang/swift:nightly-6.0-jammy as of May 26
 
 permissions:
   issues: write
 
 jobs:
   add:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: contains(github.event.issue.labels.*.name, 'add-word')
 
     steps:
@@ -20,13 +20,14 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Process Words and Update JSON
-        run: docker run --rm -e CI=true -e GH_BODY="$GH_BODY" -e POS="$POS" -v "$PWD:/host" -w /host $SWIFT_IMAGE swift add-words.swift
+        run: docker run --rm -e CI=true -e GH_BODY="$GH_BODY" -e POS="$POS" -v "$PWD:/host" -w /host $SWIFT_IMAGE swift .github/scripts/add-words.swift
         env:
           GH_BODY: ${{ github.event.issue.body }}
-          POS: ${{ github.event.issue.labels.*.name }}
+          WORDS: ${{ github.event.issue.body.words }}
+          POS: ${{ github.event.issue.body.pos }}
 
       - name: Check for Changes
-        run: bash .github/check_for_changes.sh
+        run: bash .github/scripts/check_for_changes.sh
         id: check
 
       - name: Create Pull Request

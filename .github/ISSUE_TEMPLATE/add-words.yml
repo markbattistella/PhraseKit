@@ -16,6 +16,7 @@ body:
         Please enter the words you want to add, one per line, and select the appropriate parts of speech (POS) for them. You can assign multiple POS if needed.
 
   - type: textarea
+    id: words
     attributes:
       label: New Words
       description: Enter the words you wish to add, one per line.
