@@ -1,103 +1,101 @@
-  name: Process Word Submission
+name: Process Word Submission
 
-  on:
-    issues:
-      types: [opened, reopened]
+on:
+  issues:
+    types: [opened, reopened]
 
-  env:
-    SWIFT_IMAGE: swiftlang/swift@sha256:30154112a700a5a95fd1760716bd2040e8b735f54f081a4865823abdec67d17e
+env:
+  SWIFT_IMAGE: swiftlang/swift@sha256:30154112a700a5a95fd1760716bd2040e8b735f54f081a4865823abdec67d17e
 
-  permissions:
-    issues: write
+permissions:
+  issues: write
 
-  jobs:
-    add:
-      runs-on: ubuntu-22.04
-      if: contains(github.event.issue.labels.*.name, 'add-word')
+jobs:
+  add:
+    runs-on: ubuntu-22.04
+    if: contains(github.event.issue.labels.*.name, 'add-word')
 
-      steps:
-        - name: Checkout
-          uses: actions/checkout@v3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
 
-        - name: Cache Docker Image
-          id: cache-docker
-          uses: actions/cache@v3
-          with:
-            path: /tmp/.docker-cache
-            key: ${{ runner.os }}-swift-${{ env.SWIFT_IMAGE }}
-  
-        - name: Load Docker Image from Cache
-          if: steps.cache-docker.outputs.cache-hit == 'true'
-          run: |
-            mkdir -p /tmp/.docker-cache
-            docker load -i /tmp/.docker-cache/swift_image.tar
-  
-        - name: Pull Docker Image
-          if: steps.cache-docker.outputs.cache-hit != 'true'
-          run: |
-            docker pull ${{ env.SWIFT_IMAGE }}
-            mkdir -p /tmp/.docker-cache
-            docker save ${{ env.SWIFT_IMAGE }} -o /tmp/.docker-cache/swift_image.tar
-  
-        - name: Process Words and Update JSON
-          run: |
-            # Convert the entire body to a JSON string, escaping special characters
-            GH_BODY_JSON=$(echo "${{ toJson(github.event.issue.body) }}" | jq -R -s 'gsub("\\r\\n";"\\n") | gsub("\\n";"\\n")')
-            echo "GH_BODY_JSON=$GH_BODY_JSON" >> $GITHUB_ENV
-              
-            docker run --rm -e CI=true -e GH_BODY_JSON="$GH_BODY_JSON" -v "$PWD:/host" -w /host $SWIFT_IMAGE swift .github/scripts/add-words.swift
-          env:
-            GH_BODY_JSON: ${{ env.GH_BODY_JSON }}
-          
-        - name: Check for Changes
-          run: bash .github/scripts/check_for_changes.sh
-          id: check
+      - name: Cache Docker Image
+        id: cache-docker
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.docker-cache
+          key: ${{ runner.os }}-swift-${{ env.SWIFT_IMAGE }}
 
-        - name: Create Pull Request
-          id: cpr
-          if: steps.check.outputs.changes == 'true'
-          uses: peter-evans/create-pull-request@v3
-          with:
-            add-paths: |
-              Sources/PhraseKit/Resources/_adjective.json
-              Sources/PhraseKit/Resources/_adverb.json
-              Sources/PhraseKit/Resources/_noun.json
-              Sources/PhraseKit/Resources/_verb.json
-            commit-message: ${{ github.event.issue.title }}
-            title: ${{ github.event.issue.title }}
-            branch: auto-add-${{ github.event.issue.number }}
-            delete-branch: true
-            body: |
-              Closes #${{ github.event.issue.number }}
+      - name: Load Docker Image from Cache
+        if: steps.cache-docker.outputs.cache-hit == 'true'
+        run: |
+          mkdir -p /tmp/.docker-cache
+          docker load -i /tmp/.docker-cache/swift_image.tar
 
-              ## Original Message
+      - name: Pull Docker Image
+        if: steps.cache-docker.outputs.cache-hit != 'true'
+        run: |
+          docker pull ${{ env.SWIFT_IMAGE }}
+          mkdir -p /tmp/.docker-cache
+          docker save ${{ env.SWIFT_IMAGE }} -o /tmp/.docker-cache/swift_image.tar
 
-              ${{ github.event.issue.body }}
-            committer: GitHub <noreply@github.com>
-            author: GitHub <noreply@github.com}
+      - name: Export Issue Body to Text File
+        run: |
+          echo "${{ github.event.issue.body }}" > issue_body.txt
 
-        - name: Update Issue (Success)
-          if: steps.check.outputs.changes == 'true'
-          uses: actions/github-script@v3
-          with:
-            github-token: ${{ secrets.GITHUB_TOKEN }}
-            script: |
-              github.issues.createComment({
+      - name: Process Words and Update JSON
+        run: |
+          docker run --rm -e CI=true -v "$PWD:/host" -w /host $SWIFT_IMAGE swift .github/scripts/add-words.swift issue_body.txt
+
+      - name: Check for Changes
+        run: bash .github/scripts/check_for_changes.sh
+        id: check
+
+      - name: Create Pull Request
+        id: cpr
+        if: steps.check.outputs.changes == 'true'
+        uses: peter-evans/create-pull-request@v3
+        with:
+          add-paths: |
+            Sources/PhraseKit/Resources/_adjective.json
+            Sources/PhraseKit/Resources/_adverb.json
+            Sources/PhraseKit/Resources/_noun.json
+            Sources/PhraseKit/Resources/_verb.json
+          commit-message: ${{ github.event.issue.title }}
+          title: ${{ github.event.issue.title }}
+          branch: auto-add-${{ github.event.issue.number }}
+          delete-branch: true
+          body: |
+            Closes #${{ github.event.issue.number }}
+
+            ## Original Message
+
+            ${{ github.event.issue.body }}
+          committer: GitHub <noreply@github.com>
+          author: GitHub <noreply@github.com>
+
+      - name: Update Issue (Success)
+        if: steps.check.outputs.changes == 'true'
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Thank you! We will approve and add these words with #${{ steps.cpr.outputs.pull-request-number }}.'
+            })
+
+      - name: Update Issue (Failure)
+        if: ${{ failure() || steps.check.outputs.changes != 'true' }}
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: 'Thank you! We will approve and add these words with #${{ steps.cpr.outputs.pull-request-number }}.'
-              })
-
-        - name: Update Issue (Failure)
-          if: ${{ failure() || steps.check.outputs.changes != 'true' }}
-          uses: actions/github-script@v3
-          with:
-            github-token: ${{ secrets.GITHUB_TOKEN }}
-            script: |
-              github.issues.createComment({
-                  issue_number: context.issue.number,
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  body: 'It looks like there’s nothing to do here!\n\nPlease ensure your submission contains valid words.'
-              })
+                body: 'It looks like there’s nothing to do here!\n\nPlease ensure your submission contains valid words.'
+            })
