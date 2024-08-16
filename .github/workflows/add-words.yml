@@ -23,7 +23,7 @@ jobs:
         id: extract
         run: |
           # Extract the words from the issue body
-          WORDS=$(echo "${{ github.event.issue.body }}" | awk '/### New Words/{flag=1; next} /### Parts of Speech/{flag=0} flag')
+          WORDS=$(echo "${{ github.event.issue.body }}" | awk '/### New Words/{flag=1; next} /### Parts of Speech/{flag=0} flag' | sed ':a;N;$!ba;s/\n/\\n/g')
           
           # Extract the POS from the issue body
           POS=$(echo "${{ github.event.issue.body }}" | awk '/### Parts of Speech/{flag=1; next} /### Code of Conduct/{flag=0} flag' | tr -d '\n' | tr ',' '\n')
