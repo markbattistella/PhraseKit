@@ -6,9 +6,12 @@ on:
 
 env:
   SWIFT_IMAGE: swiftlang/swift@sha256:30154112a700a5a95fd1760716bd2040e8b735f54f081a4865823abdec67d17e
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  BOT_ACCESS_TOKEN: ${{ secrets.BOT_ACCESS_TOKEN }}
 
 permissions:
   contents: write
+  pull-requests: write
   issues: write
 
 jobs:
@@ -44,9 +47,17 @@ jobs:
         run: |
           echo "${{ github.event.issue.body }}" > issue_body.txt
 
-      - name: Set Date Variable
+      - name: Set Date Variables
         id: set_date
-        run: echo "DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+        run: |
+          echo "YEAR_MONTH=$(date +'%Y.%m')" >> $GITHUB_ENV
+          echo "FULL_DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+
+      - name: Pull Latest Changes
+        run: |
+          git fetch origin ${{ env.YEAR_MONTH }}-word-additions || true
+          git checkout ${{ env.YEAR_MONTH }}-word-additions || git checkout -b ${{ env.YEAR_MONTH }}-word-additions
+          git pull origin ${{ env.YEAR_MONTH }}-word-additions --rebase || true
 
       - name: Process Words and Update JSON
         run: |
@@ -56,20 +67,27 @@ jobs:
         run: bash .github/scripts/check_for_changes.sh
         id: check
 
+      - name: Commit Changes
+        if: steps.check.outputs.changes == 'true'
+        run: |
+          git add Sources/PhraseKit/Resources/*.json
+          git commit -m "${{ env.FULL_DATE }} - New Word Additions - #${{ github.event.issue.number }}"
+          git push origin ${{ env.YEAR_MONTH }}-word-additions --force
+
       - name: Create Pull Request
         id: cpr
         if: steps.check.outputs.changes == 'true'
         uses: peter-evans/create-pull-request@v3
         with:
-          token: ${{ secrets.BOT_ACCESS_TOKEN }}
+          token: ${{ env.BOT_ACCESS_TOKEN }}
           add-paths: |
             Sources/PhraseKit/Resources/_adjective.json
             Sources/PhraseKit/Resources/_adverb.json
             Sources/PhraseKit/Resources/_noun.json
             Sources/PhraseKit/Resources/_verb.json
-          commit-message: ${{ github.event.issue.title }}
+          commit-message: ${{ env.FULL_DATE }} - New Word Additions - #${{ github.event.issue.number }}
           title: ${{ github.event.issue.title }}
-          branch: new-word-additions-${{ env.DATE }}
+          branch: ${{ env.YEAR_MONTH }}-word-additions
           delete-branch: true
           body: |
             Closes #${{ github.event.issue.number }}
@@ -84,7 +102,7 @@ jobs:
         if: steps.check.outputs.changes == 'true'
         uses: actions/github-script@v3
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ env.GITHUB_TOKEN }}
           script: |
             github.issues.createComment({
               issue_number: context.issue.number,
@@ -97,7 +115,7 @@ jobs:
         if: steps.check.outputs.changes != 'true'
         uses: actions/github-script@v3
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ env.GITHUB_TOKEN }}
           script: |
             github.issues.createComment({
                 issue_number: context.issue.number,
