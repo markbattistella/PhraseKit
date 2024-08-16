@@ -34,9 +34,9 @@ jobs:
       - name: Merge Pull Request
         if: success()
         run: |
-          gh pr merge ${{ github.event.pull_request.number }} --merge --admin --force
+          gh pr merge ${{ github.event.pull_request.number }} --admin --auto ---delete-branch --merge --author-email markbattistella-bot@users.noreply.github.com
         env:
-          GH_TOKEN: ${{ env.BOT_ACCESS_TOKEN }}
+          GITHUB_TOKEN: ${{ env.BOT_ACCESS_TOKEN }}
 
       - name: Update PR (Success)
         if: success()
