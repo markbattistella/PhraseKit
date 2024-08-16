@@ -65,6 +65,7 @@ jobs:
         if: steps.check.outputs.changes == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
+          token: ${{ env.BOT_ACCESS_TOKEN }}
           add-paths: |
             Sources/PhraseKit/Resources/_adjective.json
             Sources/PhraseKit/Resources/_adverb.json
