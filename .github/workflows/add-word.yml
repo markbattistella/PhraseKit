@@ -5,7 +5,7 @@ on:
     types: [opened, reopened]
 
 env:
-  SWIFT_IMAGE: swiftlang/swift@5.10-slim
+  SWIFT_IMAGE: swiftlang/swift:5.10-slim
 
 permissions:
   issues: write
