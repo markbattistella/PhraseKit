@@ -11,3 +11,5 @@ xcuserdata/
 Packages/
 Package.pins
 Package.resolved
+.env
+*.secrets
