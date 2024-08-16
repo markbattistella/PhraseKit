@@ -41,13 +41,14 @@
   
         - name: Process Words and Update JSON
           run: |
-            GH_BODY_JSON=$(echo "${{ toJson(github.event.issue.body) }}" | jq -R -s 'gsub("\n";"\\n")')
+            # Convert the entire body to a JSON string, escaping special characters
+            GH_BODY_JSON=$(echo "${{ toJson(github.event.issue.body) }}" | jq -R -s 'gsub("\\r\\n";"\\n") | gsub("\\n";"\\n")')
             echo "GH_BODY_JSON=$GH_BODY_JSON" >> $GITHUB_ENV
-    
+              
             docker run --rm -e CI=true -e GH_BODY_JSON="$GH_BODY_JSON" -v "$PWD:/host" -w /host $SWIFT_IMAGE swift .github/scripts/add-words.swift
           env:
             GH_BODY_JSON: ${{ env.GH_BODY_JSON }}
-
+          
         - name: Check for Changes
           run: bash .github/scripts/check_for_changes.sh
           id: check
