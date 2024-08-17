@@ -45,14 +45,20 @@ jobs:
           github-token: ${{ env.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const output = fs.readFileSync('validation_output.txt', 'utf8');
+            const outputPath = 'validation_output.txt';
+            let output = '';
+            if (fs.existsSync(outputPath)) {
+              output = fs.readFileSync(outputPath, 'utf8');
+            } else {
+              output = 'No output generated from validation.';
+            }
             github.pulls.createReview({
               pull_number: context.payload.pull_request.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `Word validation was successful with the following details:\n\`\`\`\n${ output }\`\`\`\n\`,
+              body: `Word validation was successful with the following details:\n\`\`\`\n${output}\n\`\`\`\n`,
               event: "COMMENT"
-             });
+            });
 
       - name: Update PR (Failure)
         if: failure()
