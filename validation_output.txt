@@ -4,15 +4,15 @@
 [1 / 4] WORKING ON FILE
   - File: "_adjective.json"
   - Initial counts:
-      | Pending      |     28
-      | Safe         |  11628
+      | Pending      |      0
+      | Safe         |  11629
       | Unsafe       |      6
       | Incompatible |      0
-  - Processing "pending" category with 28 words
+  - Processing "pending" category with 0 words
   - Moved:
-      |    20 words: Pending --> Safe
+      |     0 words: Pending --> Safe
       |     0 words: Pending --> Unsafe
-      |     8 words: Pending --> Incompatible
+      |     0 words: Pending --> Incompatible
   - Skipped:
       |     0 words already in Safe
       |     0 words already in Unsafe
@@ -21,15 +21,15 @@
 [2 / 4] WORKING ON FILE
   - File: "_adverb.json"
   - Initial counts:
-      | Pending      |     28
-      | Safe         |   2671
+      | Pending      |      0
+      | Safe         |   2672
       | Unsafe       |      1
       | Incompatible |      0
-  - Processing "pending" category with 28 words
+  - Processing "pending" category with 0 words
   - Moved:
-      |    20 words: Pending --> Safe
+      |     0 words: Pending --> Safe
       |     0 words: Pending --> Unsafe
-      |     8 words: Pending --> Incompatible
+      |     0 words: Pending --> Incompatible
   - Skipped:
       |     0 words already in Safe
       |     0 words already in Unsafe
@@ -38,15 +38,15 @@
 [3 / 4] WORKING ON FILE
   - File: "_noun.json"
   - Initial counts:
-      | Pending      |     28
-      | Safe         |  34157
+      | Pending      |      2
+      | Safe         |  34156
       | Unsafe       |     65
       | Incompatible |      0
-  - Processing "pending" category with 28 words
+  - Processing "pending" category with 2 words
   - Moved:
-      |    20 words: Pending --> Safe
+      |     2 words: Pending --> Safe
       |     0 words: Pending --> Unsafe
-      |     8 words: Pending --> Incompatible
+      |     0 words: Pending --> Incompatible
   - Skipped:
       |     0 words already in Safe
       |     0 words already in Unsafe
@@ -55,15 +55,15 @@
 [4 / 4] WORKING ON FILE
   - File: "_verb.json"
   - Initial counts:
-      | Pending      |     28
+      | Pending      |      0
       | Safe         |   5809
       | Unsafe       |     20
       | Incompatible |      0
-  - Processing "pending" category with 28 words
+  - Processing "pending" category with 0 words
   - Moved:
-      |    20 words: Pending --> Safe
+      |     0 words: Pending --> Safe
       |     0 words: Pending --> Unsafe
-      |     8 words: Pending --> Incompatible
+      |     0 words: Pending --> Incompatible
   - Skipped:
       |     0 words already in Safe
       |     0 words already in Unsafe
