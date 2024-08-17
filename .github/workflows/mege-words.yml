@@ -50,7 +50,7 @@ jobs:
               pull_number: context.payload.pull_request.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `Word validation was successful with the following details:\n\`\`\`\n${ output }\n\`,
+              body: `Word validation was successful with the following details:\n\`\`\`\n${ output }\`\`\`\n\`,
               event: "COMMENT"
              });
 
