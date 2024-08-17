@@ -38,10 +38,11 @@ jobs:
           git config --global user.email "markbattistella-bot@users.noreply.github.com"
           git add .
           git commit -m "Auto-update JSON files after validation"
+          git pull origin ${{ github.event.pull_request.head.ref }} --rebase
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
         env:
-          GITHUB_TOKEN: ${{ env.BOT_ACCESS_TOKEN }}
-
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
       - name: Merge Pull Request
         if: success()
         run: |
