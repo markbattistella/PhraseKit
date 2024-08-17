@@ -1,0 +1,72 @@
+
+[i] FOUND 4 JSON FILES
+
+[1 / 4] WORKING ON FILE
+  - File: "_adjective.json"
+  - Initial counts:
+      | Pending      |     28
+      | Safe         |  11628
+      | Unsafe       |      6
+      | Incompatible |      0
+  - Processing "pending" category with 28 words
+  - Moved:
+      |    20 words: Pending --> Safe
+      |     0 words: Pending --> Unsafe
+      |     8 words: Pending --> Incompatible
+  - Skipped:
+      |     0 words already in Safe
+      |     0 words already in Unsafe
+  - Processed and updated
+
+[2 / 4] WORKING ON FILE
+  - File: "_adverb.json"
+  - Initial counts:
+      | Pending      |     28
+      | Safe         |   2671
+      | Unsafe       |      1
+      | Incompatible |      0
+  - Processing "pending" category with 28 words
+  - Moved:
+      |    20 words: Pending --> Safe
+      |     0 words: Pending --> Unsafe
+      |     8 words: Pending --> Incompatible
+  - Skipped:
+      |     0 words already in Safe
+      |     0 words already in Unsafe
+  - Processed and updated
+
+[3 / 4] WORKING ON FILE
+  - File: "_noun.json"
+  - Initial counts:
+      | Pending      |     28
+      | Safe         |  34157
+      | Unsafe       |     65
+      | Incompatible |      0
+  - Processing "pending" category with 28 words
+  - Moved:
+      |    20 words: Pending --> Safe
+      |     0 words: Pending --> Unsafe
+      |     8 words: Pending --> Incompatible
+  - Skipped:
+      |     0 words already in Safe
+      |     0 words already in Unsafe
+  - Processed and updated
+
+[4 / 4] WORKING ON FILE
+  - File: "_verb.json"
+  - Initial counts:
+      | Pending      |     28
+      | Safe         |   5809
+      | Unsafe       |     20
+      | Incompatible |      0
+  - Processing "pending" category with 28 words
+  - Moved:
+      |    20 words: Pending --> Safe
+      |     0 words: Pending --> Unsafe
+      |     8 words: Pending --> Incompatible
+  - Skipped:
+      |     0 words already in Safe
+      |     0 words already in Unsafe
+  - Processed and updated
+
+[i] PROCESS COMPLETE
