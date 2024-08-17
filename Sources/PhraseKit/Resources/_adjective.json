@@ -1,11 +1,33 @@
 {
-  "unsafe" : [
-    "anal",
-    "bitchy",
-    "mongoloid",
-    "negro",
-    "negroid",
-    "scummy"
+  "pending" : [
+    "test1",
+    "test2",
+    "test3",
+    "test 4",
+    "multi-worded",
+    "test 6 6",
+    "fuck",
+    "test1",
+    "test2",
+    "test3",
+    "test 4",
+    "multi-worded",
+    "test 6 6",
+    "fuck",
+    "test1",
+    "test2",
+    "test3",
+    "test 4",
+    "multi-worded",
+    "test 6 6",
+    "fuck",
+    "test1",
+    "test2",
+    "test3",
+    "test 4",
+    "multi-worded",
+    "test 6 6",
+    "fuck"
   ],
   "safe" : [
     "abacterial",
@@ -11637,27 +11659,12 @@
     "zymoid",
     "zymotic"
   ],
-  "pending" : [
-    "test1",
-    "test2",
-    "test3",
-    "test 4",
-    "multi-worded",
-    "test 6 6",
-    "fuck",
-    "test1",
-    "test2",
-    "test3",
-    "test 4",
-    "multi-worded",
-    "test 6 6",
-    "fuck",
-    "test1",
-    "test2",
-    "test3",
-    "test 4",
-    "multi-worded",
-    "test 6 6",
-    "fuck"
+  "unsafe" : [
+    "anal",
+    "bitchy",
+    "mongoloid",
+    "negro",
+    "negroid",
+    "scummy"
   ]
 }
