@@ -5,6 +5,7 @@ on:
     types: [opened, synchronize]
 
 env:
+  SWIFT_IMAGE: swiftlang/swift@sha256:30154112a700a5a95fd1760716bd2040e8b735f54f081a4865823abdec67d17e
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   BOT_ACCESS_TOKEN: ${{ secrets.BOT_ACCESS_TOKEN }}
 
@@ -19,20 +20,33 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Install Node.js
-        uses: actions/setup-node@v3
+      - name: Cache Docker Image
+        id: cache-docker
+        uses: actions/cache@v4
         with:
-          node-version: '18'
+          path: /tmp/.docker-cache
+          key: ${{ runner.os }}-swift-${{ env.SWIFT_IMAGE }}
 
-      - name: Run Validation Script
-        id: validation
+      - name: Load Docker Image from Cache
+        if: steps.cache-docker.outputs.cache-hit == 'true'
         run: |
-          swift ./.github/scripts/validation.swift ./Sources/PhraseKit/Resources pending
+          mkdir -p /tmp/.docker-cache
+          docker load -i /tmp/.docker-cache/swift_image.tar
 
-      - name: Commit Changes
-        if: success()
+      - name: Pull Docker Image
+        if: steps.cache-docker.outputs.cache-hit != 'true'
+        run: |
+          docker pull ${{ env.SWIFT_IMAGE }}
+          mkdir -p /tmp/.docker-cache
+          docker save ${{ env.SWIFT_IMAGE }} -o /tmp/.docker-cache/swift_image.tar
+
+      - name: Process Words and Update JSON
+        run: |
+          docker run --rm -e CI=true -v "$PWD:/host" -w /host $SWIFT_IMAGE swift .github/scripts/validation.swift ./Sources/PhraseKit/Resources pending
+
+      - name: Commit and Push Changes
         run: |
           git config --global user.name "mb-actions[bot]"
           git config --global user.email "markbattistella-bot@users.noreply.github.com"
@@ -41,8 +55,8 @@ jobs:
           git pull origin ${{ github.event.pull_request.head.ref }} --rebase
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        
+          GITHUB_TOKEN: ${{ env.BOT_ACCESS_TOKEN }}
+
       - name: Merge Pull Request
         if: success()
         run: |
@@ -85,5 +99,3 @@ jobs:
               body: `Validation failed. Please check the details and make necessary changes.`,
               event: "REQUEST_CHANGES"
             });
-
-            

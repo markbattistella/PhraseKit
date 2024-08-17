@@ -1,12 +1,26 @@
 import Foundation
 
+// Function to log messages
+func log(_ message: String) {
+    print(message)
+    if let outputPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("validation_output.txt") {
+        try? message.appendLineToURL(fileURL: outputPath)
+    }
+}
+
 // Function to load the prohibited.json file
 func loadProhibitedWords() -> Set<String>? {
     // Get the directory where the script is located
     let scriptDirectory = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
     
+    // Log the current working directory
+    log("Current Directory: \(scriptDirectory.path)")
+    
     // Append the prohibited.json file name to the directory path
     let prohibitedFilePath = scriptDirectory.appendingPathComponent("prohibited.json")
+    
+    // Log the full path to the prohibited.json file
+    log("Looking for prohibited.json at: \(prohibitedFilePath.path)")
     
     // Attempt to load and parse the prohibited.json file
     guard let prohibitedData = try? Data(contentsOf: prohibitedFilePath),
@@ -17,14 +31,6 @@ func loadProhibitedWords() -> Set<String>? {
     
     // Return the set of prohibited words in lowercase
     return Set(prohibitedWords.map { $0.lowercased() })
-}
-
-// Function to log messages
-func log(_ message: String) {
-    print(message)
-    if let outputPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("validation_output.txt") {
-        try? message.appendLineToURL(fileURL: outputPath)
-    }
 }
 
 // Load the prohibited words
@@ -38,7 +44,7 @@ func processJsonFile(at filePath: URL, rescanOptions: [String], index: Int, tota
     log("  - File: \"\(filePath.lastPathComponent)\"")
     
     guard let data = try? Data(contentsOf: filePath),
-          let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: [String]] else {
+          var json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: [String]] else {
         log("  - Failed to read or parse JSON file")
         return
     }
