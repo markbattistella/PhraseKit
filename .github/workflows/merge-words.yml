@@ -29,7 +29,7 @@ jobs:
       - name: Run Validation Script
         id: validation
         run: |
-          node ./.github/scripts/scanner.js ./Sources/PhraseKit/Resources pending
+          swift ./.github/scripts/validation.swift ./Sources/PhraseKit/Resources pending
 
       - name: Commit Changes
         if: success()
