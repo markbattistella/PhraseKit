@@ -189,7 +189,8 @@ public extension PhraseGenerator {
 
 fileprivate extension PhraseGenerator {
 
-    /// Applies the exclusion list to all word lists, removing any excluded words and updates the lists.
+    /// Applies the exclusion list to all word lists, removing any excluded words and updates
+    /// the lists.
     private func applyExclusionList() {
         nouns = nouns.filter { !exclusionList.contains($0) }
         verbs = verbs.filter { !exclusionList.contains($0) }
