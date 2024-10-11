@@ -4,6 +4,7 @@
 // Website: https://markbattistella.com
 //
 
+#if canImport(NaturalLanguage)
 import Foundation
 import NaturalLanguage
 
@@ -41,3 +42,4 @@ internal class CombinationVerifier {
         }
     }
 }
+#endif
