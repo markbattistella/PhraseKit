@@ -9,7 +9,7 @@ import Foundation
 /// `PhraseGenerator` is a class designed to generate random, human-readable phrases
 /// composed of various parts of speech, such as adjectives, nouns, verbs, and adverbs.
 @available(iOS 12.0, macOS 10.14, macCatalyst 13.0, tvOS 12.0, watchOS 5.0, visionOS 1.0, *)
-public class PhraseGenerator {
+open class PhraseGenerator {
 
     /// A list of nouns used to generate phrases.
     internal var nouns: [String]
