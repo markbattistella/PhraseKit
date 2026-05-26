@@ -35,6 +35,11 @@ With its ability to customise word lists and combination types, PhraseKit is not
 - **Error Handling:** Provides error handling for cases where all possible combinations are exhausted.
 - **Extensibility:** Easy to extend and integrate into other projects.
 
+## Requirements
+
+- Swift 6.0+
+- iOS 12+, macOS 10.14+, Mac Catalyst 13+, tvOS 12+, watchOS 5+, visionOS 1+
+
 ## Installation
 
 ### Swift Package Manager
@@ -50,6 +55,14 @@ To add `PhraseKit` to your project, use the Swift Package Manager.
     ```
 
 1. Click `Add Package`.
+
+Or add it to `Package.swift`:
+
+```swift
+dependencies: [
+  .package(url: "https://github.com/markbattistella/PhraseKit", from: "26.2.21")
+]
+```
 
 ## Usage
 
@@ -92,18 +105,18 @@ print("Adverb + Verb phrase: \(adverbVerbPhrase ?? "Failed to generate")")
 ```swift
 // Throw an error if all combinations are exhausted
 do {
-  let uniquePhrase = try generator.generateUniquePhrase()
+  let uniquePhrase = try generator.generate()
   print("Unique phrase: \(uniquePhrase)")
 } catch {
   print("Error: \(error)")
 }
 
 // Return a default phrase if all combinations are exhausted
-let defaultPhrase = generator.generateUniquePhrase(orDefault: "default-phrase")
+let defaultPhrase = generator.generate(withDefault: "default-phrase")
 print("Phrase or default: \(defaultPhrase)")
 
 // Return a custom message if all combinations are exhausted
-let customMessagePhrase = generator.generateUniquePhrase(orMessage: "No more phrases available")
+let customMessagePhrase = generator.generate(withMessage: "No more phrases available")
 print("Phrase or custom message: \(customMessagePhrase)")
 
 // Silent failure: returns an empty string if all combinations are exhausted
@@ -177,40 +190,18 @@ if let phrase = generator.generatePhrase() {
 
 In this example, the `PhraseGenerator` will exclusively use the custom words provided by `MyCustomWordLoader` for phrase generation, ignoring the default word lists that are otherwise loaded from JSON files.
 
-### Extending Word Combinations
+### Choosing Word Combinations
 
-The `PhraseGenerator` class supports various types of word combinations by default, such as adjective-noun or verb-noun. However, if your project requires a different type of combination or you want to include additional logic, you can extend the `PhraseGenerator` or implement your custom logic in your word loader.
-
-#### Example: Custom Combination Logic
-
-You might want to introduce new logic that pairs words based on a specific rule or pattern. This can be done by extending the `CombinationType` enum or by adding custom logic to the generateWordPair method in a subclass of `PhraseGenerator`.
+`PhraseGenerator` supports built-in combination types such as adjective-noun, verb-noun, adverb-verb, and noun-noun. Pass a `CombinationType` when you need a specific pattern:
 
 ```swift
-import PhraseKit
+let generator = PhraseGenerator()
 
-class CustomPhraseGenerator: PhraseGenerator {
-  
-  override func generateWordPair(combinationType: CombinationType? = nil) -> String? {
-    // Custom logic for generating word pairs
-    let customType = combinationType ?? .adjectiveNoun
-    
-    switch customType {
-      case .adjectiveNoun:
-        return generatePair(from: adjectives, and: nouns)
-      // Add your custom combination logic here
-      default:
-        return super.generateWordPair(combinationType: combinationType)
-    }
-  }
-}
-
-let customGenerator = CustomPhraseGenerator()
-if let phrase = customGenerator.generatePhrase() {
-  print("Custom generated phrase: \(phrase)")
-}
+let fileName = generator.generatePhrase(combinationType: .adjectiveNoun)
+let actionName = generator.generatePhrase(combinationType: .adverbVerb)
 ```
 
-This example demonstrates how you can extend or modify the combination logic to suit specific requirements, while still leveraging the underlying structure of `PhraseKit`.
+For fully custom vocabularies, provide a `WordLoaderProtocol` implementation and use `.custom`.
 
 ## Testing
 
