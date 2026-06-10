@@ -6,10 +6,9 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  BOT_ACCESS_TOKEN: ${{ secrets.BOT_ACCESS_TOKEN }}
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
 
 jobs:
@@ -18,8 +17,28 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'mb-cli')
 
     steps:
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.BOT_APP_CLIENT_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Get GitHub App user ID
+        id: app-user
+        run: |
+          user_id=$(gh api "/users/${APP_SLUG}[bot]" --jq .id)
+          echo "id=${user_id}" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
+        with:
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Install Node.js
         uses: actions/setup-node@v3
@@ -34,21 +53,22 @@ jobs:
       - name: Commit Changes
         if: success()
         run: |
-          git config --global user.name "mb-actions[bot]"
-          git config --global user.email "markbattistella-bot@users.noreply.github.com"
+          git config --global user.name "${APP_SLUG}[bot]"
+          git config --global user.email "${APP_USER_ID}+${APP_SLUG}[bot]@users.noreply.github.com"
           git add .
           git commit -m "Auto-update JSON files after validation"
           git pull origin ${{ github.event.pull_request.head.ref }} --rebase
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          APP_USER_ID: ${{ steps.app-user.outputs.id }}
         
       - name: Merge Pull Request
         if: success()
         run: |
-          gh pr merge ${{ github.event.pull_request.number }} --admin --delete-branch --merge
+          gh pr merge ${{ github.event.pull_request.number }} --delete-branch --merge
         env:
-          GITHUB_TOKEN: ${{ env.BOT_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
 
       - name: Update PR (Success)
         if: success()

@@ -7,11 +7,10 @@ on:
 env:
   SWIFT_IMAGE: swiftlang/swift@sha256:30154112a700a5a95fd1760716bd2040e8b735f54f081a4865823abdec67d17e
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  BOT_ACCESS_TOKEN: ${{ secrets.BOT_ACCESS_TOKEN }}
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
+  pull-requests: read
   issues: write
 
 jobs:
@@ -72,12 +71,32 @@ jobs:
         run: bash .github/scripts/check_for_changes.sh
         id: check
 
+      - name: Create GitHub App token
+        id: app-token
+        if: steps.check.outputs.changes == 'true'
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.BOT_APP_CLIENT_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Get GitHub App user ID
+        id: app-user
+        if: steps.check.outputs.changes == 'true'
+        run: |
+          user_id=$(gh api "/users/${APP_SLUG}[bot]" --jq .id)
+          echo "id=${user_id}" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+
       - name: Create Pull Request
         id: cpr
         if: steps.check.outputs.changes == 'true'
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
-          token: ${{ env.BOT_ACCESS_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
           add-paths: |
             Sources/PhraseKit/Resources/_adjective.json
             Sources/PhraseKit/Resources/_adverb.json
@@ -97,8 +116,8 @@ jobs:
             ```markdown
             ${{ github.event.issue.body }}
             ```
-          committer: "mb-actions[bot] <markbattistella-bot@users.noreply.github.com>"
-          author: "mb-actions[bot] <markbattistella-bot@users.noreply.github.com>"
+          author: "${{ steps.app-token.outputs.app-slug }}[bot] <${{ steps.app-user.outputs.id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com>"
+          committer: "${{ steps.app-token.outputs.app-slug }}[bot] <${{ steps.app-user.outputs.id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com>"
 
       - name: Update Issue (Success)
         if: steps.check.outputs.changes == 'true'
@@ -131,4 +150,3 @@ jobs:
               repo: context.repo.repo,
               body: 'It looks like there is an issue with your submission. Please edit the original issue with your corrections, and it will be reprocessed.'
             })
-          
