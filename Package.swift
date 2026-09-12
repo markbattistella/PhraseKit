@@ -5,11 +5,11 @@ import PackageDescription
 let package = Package(
   name: "PhraseKit",
   platforms: [
-    .iOS(.v12),
-    .macOS(.v10_14),
-    .macCatalyst(.v13),
-    .tvOS(.v12),
-    .watchOS(.v5),
+    .iOS(.v15),
+    .macOS(.v12),
+    .macCatalyst(.v15),
+    .tvOS(.v15),
+    .watchOS(.v9),
     .visionOS(.v1),
   ],
   products: [
